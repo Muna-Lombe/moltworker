@@ -93,9 +93,7 @@ jobs:
           tool: plwr@0.7.2
 
       - name: Install Playwright browsers
-        run: |
-          npm install -g playwright
-          node "$(npm root -g)/playwright/cli.js" install --with-deps chromium
+        run: npm install -g playwright && npx playwright install --with-deps chromium
 
       - name: Run E2E tests (${{ matrix.config.name }})
         id: e2e
