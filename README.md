@@ -381,6 +381,9 @@ The `AI_GATEWAY_*` variables take precedence over `ANTHROPIC_*` if both are set.
 | `SLACK_APP_TOKEN` | No | Slack app token |
 | `CDP_SECRET` | No | Shared secret for CDP endpoint authentication (see [Browser Automation](#optional-browser-automation-cdp)) |
 | `WORKER_URL` | No | Public URL of the worker (required for CDP) |
+| `TRADING_ENABLED` | No | Set to `true` to enable admin trading controls that call trade-bridge |
+| `TRADE_BRIDGE_URL` | No | Base URL for the trade-bridge service (e.g. private tunnel URL) |
+| `TRADE_BRIDGE_HMAC_SECRET` | No | Shared HMAC secret used to sign outbound requests to trade-bridge |
 
 ## Security Considerations
 

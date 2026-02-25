@@ -140,3 +140,49 @@ export async function triggerSync(): Promise<SyncResponse> {
     method: 'POST',
   });
 }
+
+
+export interface TradingStatusResponse {
+  mode?: string;
+  paused?: boolean;
+  killSwitchActive?: boolean;
+  message?: string;
+  error?: string;
+}
+
+export interface TradingActionResponse {
+  success?: boolean;
+  message?: string;
+  error?: string;
+}
+
+export interface TradingSignalRequest {
+  symbol: string;
+  action: 'buy' | 'sell';
+  strategy?: string;
+  notional?: number;
+  metadata?: Record<string, unknown>;
+}
+
+export async function getTradingStatus(): Promise<TradingStatusResponse> {
+  return apiRequest<TradingStatusResponse>('/trading/status');
+}
+
+export async function sendTradingSignal(payload: TradingSignalRequest): Promise<TradingActionResponse> {
+  return apiRequest<TradingActionResponse>('/trading/signal', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function pauseTrading(): Promise<TradingActionResponse> {
+  return apiRequest<TradingActionResponse>('/trading/pause', {
+    method: 'POST',
+  });
+}
+
+export async function triggerKillSwitch(): Promise<TradingActionResponse> {
+  return apiRequest<TradingActionResponse>('/trading/kill-switch', {
+    method: 'POST',
+  });
+}
