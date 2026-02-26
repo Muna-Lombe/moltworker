@@ -181,6 +181,7 @@ https://your-worker.workers.dev/?token=YOUR_TOKEN
 wss://your-worker.workers.dev/ws?token=YOUR_TOKEN
 ```
 
+
 **Note:** Even with a valid token, new devices still require approval via the admin UI at `/_admin/` (see Device Pairing above).
 
 For local development only, set `DEV_MODE=true` in `.dev.vars` to skip Cloudflare Access authentication and enable `allowInsecureAuth` (bypasses device pairing entirely).
