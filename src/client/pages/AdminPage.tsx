@@ -250,7 +250,6 @@ export default function AdminPage() {
     }
   }
 
-  
 
   const formatSyncTime = (isoString: string | null) => {
     if (!isoString) return 'Never'
