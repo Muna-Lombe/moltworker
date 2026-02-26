@@ -3,6 +3,7 @@ import type { AppEnv } from '../types';
 import { createAccessMiddleware } from '../auth';
 import { ensureMoltbotGateway, findExistingMoltbotProcess, mountR2Storage, syncToR2, waitForProcess } from '../gateway';
 import { R2_MOUNT_PATH } from '../config';
+import { callTradeBridge } from '../trading/bridge';
 
 // CLI commands can take 10-15 seconds to complete due to WebSocket connection overhead
 const CLI_TIMEOUT_MS = 20000;
@@ -276,6 +277,69 @@ adminApi.post('/gateway/restart', async (c) => {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return c.json({ error: errorMessage }, 500);
   }
+});
+
+
+// POST /api/admin/trading/signal - Forward a signed signal to trade-bridge
+adminApi.post('/trading/signal', async (c) => {
+  const payload = await c.req.json().catch(() => null);
+  if (!payload || typeof payload !== 'object') {
+    return c.json({ error: 'Invalid JSON payload' }, 400);
+  }
+
+  const result = await callTradeBridge(c.env, {
+    method: 'POST',
+    path: '/signals',
+    body: payload,
+  });
+
+  if (!result.ok) {
+    return c.json({ error: result.error }, { status: result.status as 400 | 401 | 403 | 404 | 429 | 500 | 502 | 503 });
+  }
+
+  return c.json(result.data ?? { success: true });
+});
+
+// GET /api/admin/trading/status - Get status from trade-bridge
+adminApi.get('/trading/status', async (c) => {
+  const result = await callTradeBridge(c.env, {
+    method: 'GET',
+    path: '/status',
+  });
+
+  if (!result.ok) {
+    return c.json({ error: result.error }, { status: result.status as 400 | 401 | 403 | 404 | 429 | 500 | 502 | 503 });
+  }
+
+  return c.json(result.data ?? { status: 'unknown' });
+});
+
+// POST /api/admin/trading/pause - Pause trading through bridge
+adminApi.post('/trading/pause', async (c) => {
+  const result = await callTradeBridge(c.env, {
+    method: 'POST',
+    path: '/pause',
+  });
+
+  if (!result.ok) {
+    return c.json({ error: result.error }, { status: result.status as 400 | 401 | 403 | 404 | 429 | 500 | 502 | 503 });
+  }
+
+  return c.json(result.data ?? { success: true });
+});
+
+// POST /api/admin/trading/kill-switch - Trigger bridge kill switch
+adminApi.post('/trading/kill-switch', async (c) => {
+  const result = await callTradeBridge(c.env, {
+    method: 'POST',
+    path: '/kill-switch',
+  });
+
+  if (!result.ok) {
+    return c.json({ error: result.error }, { status: result.status as 400 | 401 | 403 | 404 | 429 | 500 | 502 | 503 });
+  }
+
+  return c.json(result.data ?? { success: true });
 });
 
 // Mount admin API routes under /admin
