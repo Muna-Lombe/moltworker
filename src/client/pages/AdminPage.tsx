@@ -105,14 +105,6 @@ export default function AdminPage() {
     }
   }, [])
 
-  const fetchTradingStatus = useCallback(async () => {
-    try {
-      const status = await getTradingStatus()
-      setTradingStatus(status)
-    } catch (err) {
-      console.error('Failed to fetch trading status:', err)
-    }
-  }, [])
 
   useEffect(() => {
     fetchDevices()
@@ -258,64 +250,7 @@ export default function AdminPage() {
     }
   }
 
-  const handleSendTestSignal = async () => {
-    setTradingActionInProgress('signal')
-    try {
-      const result = await sendTradingSignal({
-        symbol: 'TON/USDT',
-        action: 'buy',
-        strategy: 'manual-test',
-      })
-      if (result.error) {
-        setError(result.error)
-      } else {
-        setError(null)
-        await fetchTradingStatus()
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send signal')
-    } finally {
-      setTradingActionInProgress(null)
-    }
-  }
-
-  const handlePauseTrading = async () => {
-    setTradingActionInProgress('pause')
-    try {
-      const result = await pauseTrading()
-      if (result.error) {
-        setError(result.error)
-      } else {
-        setError(null)
-        await fetchTradingStatus()
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to pause trading')
-    } finally {
-      setTradingActionInProgress(null)
-    }
-  }
-
-  const handleKillSwitch = async () => {
-    if (!confirm('Trigger kill switch? This should stop all new trading actions immediately.')) {
-      return
-    }
-
-    setTradingActionInProgress('kill')
-    try {
-      const result = await triggerKillSwitch()
-      if (result.error) {
-        setError(result.error)
-      } else {
-        setError(null)
-        await fetchTradingStatus()
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to trigger kill switch')
-    } finally {
-      setTradingActionInProgress(null)
-    }
-  }
+  
 
   const formatSyncTime = (isoString: string | null) => {
     if (!isoString) return 'Never'
