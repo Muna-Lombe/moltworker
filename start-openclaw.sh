@@ -36,6 +36,7 @@ r2_configured() {
 # Use explicit bucket name if set, otherwise use default
 R2_BUCKET_DEFAULT="${R2_BUCKET_NAME:-moltbot-data}"
 
+
 setup_rclone() {
     mkdir -p "$(dirname "$RCLONE_CONF")"
     
