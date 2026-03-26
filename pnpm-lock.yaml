@@ -25,8 +25,8 @@ importers:
         version: 19.2.4(react@19.2.4)
     devDependencies:
       '@cloudflare/sandbox':
-        specifier: '*'
-        version: 0.7.6
+        specifier: ^0.7.20
+        version: 0.7.20
       '@cloudflare/vite-plugin':
         specifier: ^1.0.0
         version: 1.25.5(vite@6.4.1(@types/node@22.19.12))(workerd@1.20260302.0)(wrangler@4.68.1(@cloudflare/workers-types@4.20260305.0))
@@ -156,8 +156,8 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
-  '@cloudflare/containers@0.0.30':
-    resolution: {integrity: sha512-i148xBgmyn/pje82ZIyuTr/Ae0BT/YWwa1/GTJcw6DxEjUHAzZLaBCiX446U9OeuJ2rBh/L/9FIzxX5iYNt1AQ==}
+  '@cloudflare/containers@0.1.1':
+    resolution: {integrity: sha512-YTdobRTnTlUOUPMFemufH367A9Z8pDfZ+UboYMLbGpO0VlvEXZDiioSmXPQMHld2vRtkL31mcRii3bcbQU6fdw==}
 
   '@cloudflare/kv-asset-handler@0.4.2':
     resolution: {integrity: sha512-SIOD2DxrRRwQ+jgzlXCqoEFiKOFqaPjhnNTGKXSRLvp1HiOvapLaFG2kEr9dYQTYe8rKrd9uvDUzmAITeNyaHQ==}
@@ -167,8 +167,8 @@ packages:
     resolution: {integrity: sha512-e/0s9Ac2IhyBrgnyTDrYEippqrXqKtllP8qezyunOb6icOJ2FzbfQwhWRIVwV3AgZtutQTF5Kb/gFAGXCuGRqQ==}
     engines: {node: '>=18'}
 
-  '@cloudflare/sandbox@0.7.6':
-    resolution: {integrity: sha512-tBDM3AsKeMVxCUXtClTC4rRKHejx8J54Uj7ngyNb7q2tRc4KkaFDY9o70Jq6E3nbxRNwJZ9TxdxtnbQvOy1F6g==}
+  '@cloudflare/sandbox@0.7.20':
+    resolution: {integrity: sha512-eA/b6qgKYSJ46bfpzllqx99ewWQir+hd4Yv3GaSsa0x6MtwlO4+xLLHRSwiOZvf4xK22qTE3xTE9QOiVRrYsHQ==}
     peerDependencies:
       '@openai/agents': ^0.3.3
       '@opencode-ai/sdk': ^1.1.40
@@ -1917,7 +1917,7 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@cloudflare/containers@0.0.30': {}
+  '@cloudflare/containers@0.1.1': {}
 
   '@cloudflare/kv-asset-handler@0.4.2': {}
 
@@ -1935,9 +1935,9 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@cloudflare/sandbox@0.7.6':
+  '@cloudflare/sandbox@0.7.20':
     dependencies:
-      '@cloudflare/containers': 0.0.30
+      '@cloudflare/containers': 0.1.1
       aws4fetch: 1.0.20
 
   '@cloudflare/unenv-preset@2.14.0(unenv@2.0.0-rc.24)(workerd@1.20260302.0)':
