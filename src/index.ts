@@ -545,7 +545,7 @@ app.all('*', async (c) => {
  *
  * Configure the check interval in wrangler.jsonc triggers.crons (default: every 1 minute).
  */
-async function handleScheduled(env: MoltbotEnv): Promise<void> {
+async function handleScheduled(env: OpenClawEnv): Promise<void> {
   const cronStoreObject = await env.BACKUP_BUCKET.get(CRON_STORE_R2_KEY);
   if (!cronStoreObject) {
     console.log('[CRON] No cron store found in R2, skipping');
@@ -567,7 +567,7 @@ async function handleScheduled(env: MoltbotEnv): Promise<void> {
   console.log(`[CRON] Cron job due in ${deltaMinutes}m, waking container`);
 
   const sandbox = getSandbox(env.Sandbox, 'moltbot', buildSandboxOptions(env));
-  await ensureMoltbotGateway(sandbox, env);
+  await ensureGateway(sandbox, env);
   console.log('[CRON] Container woken successfully');
 }
 
