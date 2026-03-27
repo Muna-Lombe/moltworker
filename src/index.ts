@@ -258,22 +258,24 @@ app.all('*', async (c) => {
 
   console.log('[PROXY] Handling request:', url.pathname);
 
-  // Restore from backup before starting the gateway.
-  // This is only called here (catch-all) and from /api/status — NOT from admin
-  // routes like sync or debug/cli, because the SDK resets the FUSE overlay on
-  // createBackup, wiping upper-layer writes.
-  try {
-    await Promise.race([
-      restoreIfNeeded(sandbox, c.env.BACKUP_BUCKET),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Restore timeout')), 15_000)),
-    ]);
-  } catch (err) {
-    console.error('[PROXY] Backup restore failed/timeout:', err);
-  }
-
   // Check if gateway is already running
   const existingProcess = await findExistingGatewayProcess(sandbox);
   const isGatewayReady = existingProcess !== null && existingProcess.status === 'running';
+
+  // Only restore from backup when the gateway needs to start.
+  // Restoring on every request (including WebSocket reconnects) would mount a
+  // FUSE overlay that interferes with createBackup — the SDK resets the overlay
+  // on backup, wiping upper-layer writes.
+  if (!isGatewayReady) {
+    try {
+      await Promise.race([
+        restoreIfNeeded(sandbox, c.env.BACKUP_BUCKET),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Restore timeout')), 15_000)),
+      ]);
+    } catch (err) {
+      console.error('[PROXY] Backup restore failed/timeout:', err);
+    }
+  }
 
   // For browser requests (non-WebSocket, non-API), show loading page if gateway isn't ready
   const isWebSocketRequest = request.headers.get('Upgrade')?.toLowerCase() === 'websocket';
