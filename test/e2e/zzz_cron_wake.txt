@@ -97,7 +97,7 @@ CRON_STORE='{"version":1,"jobs":[{"id":"future-job","enabled":true,"schedule":{"
 sleep 5
 
 # Trigger cron — should skip because job is 1h away (outside 10m lead time)
-./curl-auth -s -X POST "$WORKER_URL/debug/trigger-cron" | jq .
+./curl-auth -s -X POST "$WORKER_URL/debug/trigger-cron" > /dev/null
 
 # Verify gateway is still down (cron didn't wake it)
 sleep 3
@@ -107,3 +107,5 @@ sleep 3
 ---
 where
 * result.ok == false
+
+
