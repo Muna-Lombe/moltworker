@@ -30,6 +30,7 @@ import { ensureGateway, findExistingGatewayProcess, killGateway } from './gatewa
 import { publicRoutes, api, adminUi, debug, cdp } from './routes';
 import { redactSensitiveParams } from './utils/logging';
 import { restoreIfNeeded, createSnapshot } from './persistence';
+import { handleScheduled } from './cron/handler';
 import loadingPageHtml from './assets/loading.html';
 import configErrorHtml from './assets/config-error.html';
 
@@ -115,7 +116,7 @@ function validateRequiredEnv(env: OpenClawEnv): string[] {
  *   npx wrangler secret put SANDBOX_SLEEP_AFTER
  *   # Enter: 10m (or 1h, 30m, etc.)
  */
-function buildSandboxOptions(env: OpenClawEnv): SandboxOptions {
+export function buildSandboxOptions(env: OpenClawEnv): SandboxOptions {
   const sleepAfter = env.SANDBOX_SLEEP_AFTER?.toLowerCase() || 'never';
 
   // 'never' means keep the container alive indefinitely
@@ -258,74 +259,30 @@ app.all('*', async (c) => {
 
   console.log('[PROXY] Handling request:', url.pathname);
 
-  // Check if gateway is already running (with timeout to avoid hanging on cold start)
-  let existingProcess = null;
-  try {
-    existingProcess = await Promise.race([
-      findExistingGatewayProcess(sandbox),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 10_000)),
-    ]);
-  } catch {
-    // Treat as not running
-  }
-  const isGatewayReady = existingProcess !== null && existingProcess.status === 'running';
-
-  // Only restore from backup when the gateway needs to start.
-  // Restoring on every request (including WebSocket reconnects) would mount a
-  // FUSE overlay that interferes with createBackup — the SDK resets the overlay
-  // on backup, wiping upper-layer writes.
-  if (!isGatewayReady) {
-    try {
-      await Promise.race([
-        restoreIfNeeded(sandbox, c.env.BACKUP_BUCKET),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Restore timeout')), 15_000)),
-      ]);
-    } catch (err) {
-      console.error('[PROXY] Backup restore failed/timeout:', err);
-    }
-  }
-
-  // For browser requests (non-WebSocket, non-API), show loading page if gateway isn't ready
   const isWebSocketRequest = request.headers.get('Upgrade')?.toLowerCase() === 'websocket';
   const acceptsHtml = request.headers.get('Accept')?.includes('text/html');
 
-  if (!isGatewayReady && !isWebSocketRequest && acceptsHtml) {
-    console.log('[PROXY] Gateway not ready, serving loading page');
+  // For browser HTML requests, always try the proxy first but with a fallback
+  // to the loading page. This avoids calling listProcesses() which can hang
+  // on cold start (the DO RPC takes 30-60s and kills the Worker via CPU limit).
+  // The loading page polls /api/status which handles restore + gateway start.
 
-    // Start the gateway in the background (don't await)
-    c.executionCtx.waitUntil(
-      ensureGateway(sandbox, c.env).catch((err: Error) => {
-        console.error('[PROXY] Background gateway start failed:', err);
-      }),
-    );
-
-    // Return the loading page immediately
-    return c.html(loadingPageHtml);
-  }
-
-  // Ensure gateway is running (this will wait for startup)
-  try {
-    await ensureGateway(sandbox, c.env);
-  } catch (error) {
-    console.error('[PROXY] Failed to start gateway:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-    let hint = 'Check worker logs with: wrangler tail';
-    if (!c.env.ANTHROPIC_API_KEY) {
-      hint = 'ANTHROPIC_API_KEY is not set. Run: wrangler secret put ANTHROPIC_API_KEY';
-    } else if (errorMessage.includes('heap out of memory') || errorMessage.includes('OOM')) {
-      hint = 'Gateway ran out of memory. Try again or check for memory leaks.';
+  // For non-WebSocket, non-HTML requests (API calls, static assets), we need
+  // the gateway to be running. Try with a timeout — if it's not ready, return
+  // an error that the client can retry.
+  if (!isWebSocketRequest && !acceptsHtml) {
+    try {
+      await ensureGateway(sandbox, c.env);
+    } catch (error) {
+      console.error('[PROXY] Failed to start gateway:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return c.json({ error: 'Gateway not ready', details: errorMessage }, 503);
     }
-
-    return c.json(
-      {
-        error: 'Gateway failed to start',
-        details: errorMessage,
-        hint,
-      },
-      503,
-    );
   }
+
+  // For HTML and WebSocket requests, try to proxy directly. If the gateway
+  // isn't running, containerFetch/wsConnect will throw and we serve the
+  // loading page (HTML) or return an error (WebSocket).
 
   // Proxy to gateway with WebSocket message interception
   if (isWebSocketRequest) {
@@ -508,8 +465,13 @@ app.all('*', async (c) => {
         httpResponse = await sandbox.containerFetch(request, GATEWAY_PORT);
       } catch (retryErr) {
         console.error('[HTTP] Retry after restart also failed:', retryErr);
+        if (acceptsHtml) return c.html(loadingPageHtml);
         return c.json({ error: 'Gateway crashed and recovery failed' }, 503);
       }
+    } else if (acceptsHtml) {
+      // Gateway not ready for HTML request — show loading page
+      console.log('[HTTP] Gateway not ready, serving loading page');
+      return c.html(loadingPageHtml);
     } else {
       console.error('[HTTP] Proxy error:', err);
       return c.json(
@@ -534,4 +496,7 @@ app.all('*', async (c) => {
 
 export default {
   fetch: app.fetch,
+  async scheduled(_controller: ScheduledController, env: OpenClawEnv, ctx: ExecutionContext) {
+    ctx.waitUntil(handleScheduled(env));
+  },
 };

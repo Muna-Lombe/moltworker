@@ -39,45 +39,25 @@ publicRoutes.get('/api/status', async (c) => {
     let process = await findExistingGatewayProcess(sandbox);
     console.log('[api/status] existing process:', process?.id ?? 'none', process?.status ?? '');
     if (!process) {
-      // Restore from backup only when the gateway needs to start.
-      // Restoring while the gateway is running would mount a FUSE overlay
-      // that interferes with createBackup.
+      // Restore synchronously — restoreBackup is a fast RPC call (~1-3s).
+      // This MUST happen before ensureGateway or the gateway starts without
+      // the FUSE overlay.
       try {
-        await Promise.race([
-          restoreIfNeeded(sandbox, c.env.BACKUP_BUCKET),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Restore timeout')), 15_000),
-          ),
-        ]);
+        await restoreIfNeeded(sandbox, c.env.BACKUP_BUCKET);
       } catch (err) {
-        console.error('[api/status] Backup restore failed/timeout:', err);
+        console.error('[api/status] Restore failed:', err);
       }
 
-      // No gateway process found — start it with a short timeout.
-      // The loading page polls /api/status every few seconds, so even
-      // if this attempt times out, subsequent polls will retry.
-      console.log('[api/status] No process found, starting gateway...');
-      const QUICK_START_TIMEOUT = 30_000;
-      try {
-        await Promise.race([
-          ensureGateway(sandbox, c.env),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Gateway start timeout')), QUICK_START_TIMEOUT),
-          ),
-        ]);
-        process = await findExistingGatewayProcess(sandbox);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.error('[api/status] Gateway start failed/timeout:', msg);
-        return c.json({
-          ok: false,
-          status: msg.includes('timeout') ? 'starting' : 'start_failed',
-          error: msg,
-        });
-      }
-      if (!process) {
-        return c.json({ ok: false, status: 'not_running' });
-      }
+      // Start the gateway in the background — this is slow (up to 180s for
+      // container start + openclaw onboard) and would exceed the Worker CPU
+      // limit if done synchronously. The loading page polls every 2s.
+      console.log('[api/status] No process found, starting gateway in background');
+      c.executionCtx.waitUntil(
+        ensureGateway(sandbox, c.env).catch((err: unknown) => {
+          console.error('[api/status] Background gateway start failed:', err);
+        }),
+      );
+      return c.json({ ok: false, status: 'starting' });
     }
 
     // Process exists, check if it's actually responding
