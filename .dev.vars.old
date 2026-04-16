@@ -1,0 +1,48 @@
+# Copy this to .dev.vars and fill in your values
+# .dev.vars is gitignored and used by wrangler dev
+
+# AI Provider (at least one required)
+ANTHROPIC_API_KEY=sk-ant-...
+# OPENAI_API_KEY=sk-...
+
+# Cloudflare AI Gateway (alternative to direct provider keys)
+CLOUDFLARE_AI_GATEWAY_API_KEY=M8RD0XGee2aWLvzG1xArHrWsaJCHFuFbCZuWwNp7
+CF_AI_GATEWAY_ACCOUNT_ID=d1b9378e2318376153f529443af41b25
+CF_AI_GATEWAY_GATEWAY_ID=moltworker-gateway
+CF_AI_GATEWAY_MODEL=workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast
+
+# Legacy AI Gateway (still supported)
+AI_GATEWAY_API_KEY=kgNjKXybLosx5vbuMm7hmS8532pQUuSKUoOfHOUp
+AI_GATEWAY_BASE_URL=https://gateway.ai.cloudflare.com/v1/d1b9378e2318376153f529443af41b25/moltworker-gateway/anthropic
+
+# Local development mode - skips Cloudflare Access auth and bypasses device pairing
+DEV_MODE=false
+
+# E2E test mode - skips Cloudflare Access auth but keeps device pairing enabled
+# Use this for automated tests that need to test the real pairing flow
+E2E_TEST_MODE=true
+
+# Enable debug routes at /debug/* (optional)
+DEBUG_ROUTES=true
+
+# Optional - set a fixed token instead of auto-generated
+MOLTBOT_GATEWAY_TOKEN=a49758112d0362dbb8a0b29c3472e900de1c619f67c93dc020bd30898593dc32
+
+# Cloudflare Access configuration for /_admin and /api routes
+# Required for admin UI and device pairing API in production
+CF_ACCESS_TEAM_DOMAIN=moorhouse.cloudflareaccess.com
+CF_ACCESS_AUD=728f570d663011c7eb9ff17dbbf5d96c9b4d2be59b287b5900e864f6657c3a97
+
+# Optional chat channels
+TELEGRAM_BOT_TOKEN=8593263207:AAEU3cjpTyH2ID8Kbp7_fSXbHMpNW0A22NY
+# DISCORD_BOT_TOKEN=optional
+
+# CDP (Chrome DevTools Protocol) configuration for browser automation
+CDP_SECRET=323c64e7ba51246df39dcf83d945fad55264e3355666746aa7eada258d9a3089
+WORKER_URL=moltbot-sandbox.lombemuna.workers.dev
+
+R2_BUCKET_NAME=moltbot
+R2_ACCESS_KEY_ID=6ea20f432ddd45c49b297cc09479a168
+R2_SECRET_ACCESS_KEY=540e3bc0fd15efc086dff897c6120ed2a64d6ec6750f765a9f8686dbb65cc861
+CLOUDFLARE_ACCOUNT_ID=d1b9378e2318376153f529443af41b25
+

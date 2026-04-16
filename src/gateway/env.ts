@@ -1,4 +1,4 @@
-import type { MoltbotEnv } from '../types';
+import type { OpenClawEnv } from '../types';
 
 /**
  * Build environment variables to pass to the OpenClaw container process
@@ -6,7 +6,7 @@ import type { MoltbotEnv } from '../types';
  * @param env - Worker environment bindings
  * @returns Environment variables record
  */
-export function buildEnvVars(env: MoltbotEnv): Record<string, string> {
+export function buildEnvVars(env: OpenClawEnv): Record<string, string> {
   const envVars: Record<string, string> = {};
 
   // Cloudflare AI Gateway configuration (new native provider)
@@ -27,7 +27,10 @@ export function buildEnvVars(env: MoltbotEnv): Record<string, string> {
   // Legacy AI Gateway support: AI_GATEWAY_BASE_URL + AI_GATEWAY_API_KEY
   // When set, these override direct keys for backward compatibility
   if (env.AI_GATEWAY_API_KEY && env.AI_GATEWAY_BASE_URL) {
-    const normalizedBaseUrl = env.AI_GATEWAY_BASE_URL.replace(/\/+$/, '');
+    let normalizedBaseUrl = env.AI_GATEWAY_BASE_URL;
+    while (normalizedBaseUrl.endsWith('/')) {
+      normalizedBaseUrl = normalizedBaseUrl.slice(0, -1);
+    }
     envVars.AI_GATEWAY_BASE_URL = normalizedBaseUrl;
     // Legacy path routes through Anthropic base URL
     envVars.ANTHROPIC_BASE_URL = normalizedBaseUrl;
